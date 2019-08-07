@@ -6,7 +6,10 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-type Dialer = proxy.Dialer
+type (
+	Dialer        = proxy.Dialer
+	ContextDialer = proxy.ContextDialer
+)
 
 var Direct Dialer = proxy.Direct
 
