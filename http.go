@@ -46,16 +46,13 @@ func (d *httpDialer) Dial(network, addr string) (net.Conn, error) {
 	return d.DialContext(context.Background(), network, addr)
 }
 
-func (d *httpDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
+func (d *httpDialer) DialContext(ctx context.Context, network, addr string) (c net.Conn, err error) {
 	switch network {
 	case "tcp", "tcp4", "tcp6":
-		return d.dialTCP(ctx, network, addr)
 	default:
-		return nil, net.UnknownNetworkError(network)
+		return nil, fmt.Errorf("proxy/http: network not implemented: %v", network)
 	}
-}
 
-func (d *httpDialer) dialTCP(ctx context.Context, network, addr string) (c net.Conn, err error) {
 	c, err = Dial(ctx, d.Forward, network, d.Server)
 	if err != nil {
 		return nil, fmt.Errorf("proxy/http: dial %v: %w", d.Server, err)

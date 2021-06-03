@@ -34,8 +34,14 @@ func (d *tcptunDialer) Dial(network, addr string) (net.Conn, error) {
 func (d *tcptunDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp4", "tcp6":
-		return Dial(ctx, d.Forward, network, d.Server)
 	default:
-		return nil, net.UnknownNetworkError(network)
+		return nil, fmt.Errorf("proxy/tcptun: network not implemented: %v", network)
 	}
+
+	c, err := Dial(ctx, d.Forward, network, d.Server)
+	if err != nil {
+		err = fmt.Errorf("proxy/tcptun: dial %v: %w", d.Server, err)
+	}
+
+	return c, err
 }

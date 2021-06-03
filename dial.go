@@ -7,10 +7,17 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-func Dial(ctx context.Context, d proxy.Dialer, network, address string) (net.Conn, error) {
+func Dial(ctx context.Context, d proxy.Dialer, network, addr string) (net.Conn, error) {
 	if xd, ok := d.(proxy.ContextDialer); ok {
-		return xd.DialContext(ctx, network, address)
+		return xd.DialContext(ctx, network, addr)
 	}
+
+	return dialFallback(ctx, d, network, addr)
+}
+
+func dialFallback(ctx context.Context, d proxy.Dialer, network, addr string) (net.Conn, error) {
+	done := make(chan struct{})
+	defer close(done)
 
 	type Result struct {
 		Conn net.Conn
@@ -20,19 +27,18 @@ func Dial(ctx context.Context, d proxy.Dialer, network, address string) (net.Con
 	result := make(chan Result, 1)
 
 	go func() {
-		conn, err := d.Dial(network, address)
-		result <- Result{conn, err}
+		c, err := d.Dial(network, addr)
+		result <- Result{c, err}
+
+		if <-done; len(result) == 1 {
+			if c != nil {
+				_ = c.Close()
+			}
+		}
 	}()
 
 	select {
 	case <-ctx.Done():
-		go func() {
-			r := <-result
-			if r.Conn != nil {
-				r.Conn.Close()
-			}
-		}()
-
 		return nil, ctx.Err()
 	case r := <-result:
 		return r.Conn, r.Err

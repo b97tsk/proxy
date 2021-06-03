@@ -33,13 +33,10 @@ func (d *wsDialer) Dial(network, addr string) (net.Conn, error) {
 func (d *wsDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp4", "tcp6":
-		return d.dialTCP(ctx, network, addr)
 	default:
-		return nil, net.UnknownNetworkError(network)
+		return nil, fmt.Errorf("proxy/websocket: network not implemented: %v", network)
 	}
-}
 
-func (d *wsDialer) dialTCP(ctx context.Context, _, addr string) (net.Conn, error) {
 	dialer := &websocket.Dialer{
 		NetDialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
 			return Dial(ctx, d.Forward, network, addr) // Use addr from dialTCP.

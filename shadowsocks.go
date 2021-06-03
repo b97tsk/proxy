@@ -80,16 +80,13 @@ func (d *shadowsocksDialer) Dial(network, addr string) (net.Conn, error) {
 	return d.DialContext(context.Background(), network, addr)
 }
 
-func (d *shadowsocksDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
+func (d *shadowsocksDialer) DialContext(ctx context.Context, network, addr string) (c net.Conn, err error) {
 	switch network {
 	case "tcp", "tcp4", "tcp6":
-		return d.dialTCP(ctx, network, addr)
 	default:
-		return nil, net.UnknownNetworkError(network)
+		return nil, fmt.Errorf("proxy/shadowsocks: network not implemented: %v", network)
 	}
-}
 
-func (d *shadowsocksDialer) dialTCP(ctx context.Context, network, addr string) (c net.Conn, err error) {
 	remoteAddr := socks.ParseAddr(addr)
 	if remoteAddr == nil {
 		return nil, shadowsocksParseAddrError(addr)

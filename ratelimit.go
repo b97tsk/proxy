@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/url"
 	"strconv"
@@ -69,16 +70,18 @@ func (d *rateLimitDialer) Dial(network, addr string) (net.Conn, error) {
 func (d *rateLimitDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp4", "tcp6":
-		return d.dialTCP(ctx, network, addr)
 	default:
-		return nil, net.UnknownNetworkError(network)
+		return nil, fmt.Errorf("proxy/ratelimit: network not implemented: %v", network)
 	}
-}
 
-func (d *rateLimitDialer) dialTCP(ctx context.Context, network, addr string) (net.Conn, error) {
-	conn, err := Dial(ctx, d.Forward, network, addr)
+	c, err := Dial(ctx, d.Forward, network, addr)
+	if err != nil {
+		err = fmt.Errorf("proxy/ratelimit: dial %v: %w", addr, err)
+	}
+
 	if err == nil && (d.ReadRate > 0 || d.WriteRate > 0) {
-		l := &rateLimiter{Conn: conn}
+		l := &rateLimiter{Conn: c}
+
 		if d.ReadRate > 0 {
 			l.r = rate.NewLimiter(rate.Limit(d.ReadRate), rateLimitBurst)
 		}
@@ -87,10 +90,10 @@ func (d *rateLimitDialer) dialTCP(ctx context.Context, network, addr string) (ne
 			l.w = rate.NewLimiter(rate.Limit(d.WriteRate), rateLimitBurst)
 		}
 
-		conn = l
+		c = l
 	}
 
-	return conn, err
+	return c, err
 }
 
 type rateLimiter struct {
