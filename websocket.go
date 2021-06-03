@@ -9,21 +9,20 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"golang.org/x/net/proxy"
 )
 
 func init() {
-	proxy.RegisterDialerType("ws", wsFromURL)
-	proxy.RegisterDialerType("wss", wsFromURL)
+	proxy_RegisterDialerType("ws", wsFromURL)
+	proxy_RegisterDialerType("wss", wsFromURL)
 }
 
-func wsFromURL(u *url.URL, forward proxy.Dialer) (proxy.Dialer, error) {
+func wsFromURL(u *url.URL, forward proxy_Dialer) (proxy_Dialer, error) {
 	return &wsDialer{u, forward}, nil
 }
 
 type wsDialer struct {
 	URL     *url.URL
-	Forward proxy.Dialer
+	Forward proxy_Dialer
 }
 
 func (d *wsDialer) Dial(network, addr string) (net.Conn, error) {

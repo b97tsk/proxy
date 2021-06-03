@@ -5,16 +5,14 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-
-	"golang.org/x/net/proxy"
 )
 
 func init() {
-	proxy.RegisterDialerType("tcp", tcptunFromURL)
-	proxy.RegisterDialerType("tcptun", tcptunFromURL)
+	proxy_RegisterDialerType("tcp", tcptunFromURL)
+	proxy_RegisterDialerType("tcptun", tcptunFromURL)
 }
 
-func tcptunFromURL(u *url.URL, forward proxy.Dialer) (proxy.Dialer, error) {
+func tcptunFromURL(u *url.URL, forward proxy_Dialer) (proxy_Dialer, error) {
 	if u.Port() == "" {
 		return nil, fmt.Errorf("proxy/tcptun: missing port in url %v", u)
 	}
@@ -24,7 +22,7 @@ func tcptunFromURL(u *url.URL, forward proxy.Dialer) (proxy.Dialer, error) {
 
 type tcptunDialer struct {
 	Server  string
-	Forward proxy.Dialer
+	Forward proxy_Dialer
 }
 
 func (d *tcptunDialer) Dial(network, addr string) (net.Conn, error) {

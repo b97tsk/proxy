@@ -9,18 +9,16 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"golang.org/x/net/proxy"
 )
 
 func init() {
-	proxy.RegisterDialerType("http", httpFromURL)
+	proxy_RegisterDialerType("http", httpFromURL)
 }
 
-func httpFromURL(u *url.URL, forward proxy.Dialer) (proxy.Dialer, error) {
-	var auth *proxy.Auth
+func httpFromURL(u *url.URL, forward proxy_Dialer) (proxy_Dialer, error) {
+	var auth *proxy_Auth
 	if u.User != nil {
-		auth = new(proxy.Auth)
+		auth = new(proxy_Auth)
 		auth.User = u.User.Username()
 
 		if p, ok := u.User.Password(); ok {
@@ -38,8 +36,8 @@ func httpFromURL(u *url.URL, forward proxy.Dialer) (proxy.Dialer, error) {
 
 type httpDialer struct {
 	Server  string
-	Auth    *proxy.Auth
-	Forward proxy.Dialer
+	Auth    *proxy_Auth
+	Forward proxy_Dialer
 }
 
 func (d *httpDialer) Dial(network, addr string) (net.Conn, error) {

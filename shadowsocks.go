@@ -11,14 +11,13 @@ import (
 
 	"github.com/shadowsocks/go-shadowsocks2/core"
 	"github.com/shadowsocks/go-shadowsocks2/socks"
-	"golang.org/x/net/proxy"
 )
 
 func init() {
-	proxy.RegisterDialerType("ss", shadowsocksFromURL)
+	proxy_RegisterDialerType("ss", shadowsocksFromURL)
 }
 
-func shadowsocksFromURL(u *url.URL, forward proxy.Dialer) (proxy.Dialer, error) {
+func shadowsocksFromURL(u *url.URL, forward proxy_Dialer) (proxy_Dialer, error) {
 	origin := u
 
 	if u.User == nil {
@@ -73,7 +72,7 @@ func decodeBase64String(s string) ([]byte, error) {
 type shadowsocksDialer struct {
 	Server  string
 	Cipher  core.Cipher
-	Forward proxy.Dialer
+	Forward proxy_Dialer
 }
 
 func (d *shadowsocksDialer) Dial(network, addr string) (net.Conn, error) {

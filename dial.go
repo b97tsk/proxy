@@ -3,19 +3,21 @@ package proxy
 import (
 	"context"
 	"net"
-
-	"golang.org/x/net/proxy"
 )
 
-func Dial(ctx context.Context, d proxy.Dialer, network, addr string) (net.Conn, error) {
-	if xd, ok := d.(proxy.ContextDialer); ok {
+type ContextDialer interface {
+	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
+}
+
+func Dial(ctx context.Context, d Dialer, network, addr string) (net.Conn, error) {
+	if xd, ok := d.(ContextDialer); ok {
 		return xd.DialContext(ctx, network, addr)
 	}
 
 	return dialFallback(ctx, d, network, addr)
 }
 
-func dialFallback(ctx context.Context, d proxy.Dialer, network, addr string) (net.Conn, error) {
+func dialFallback(ctx context.Context, d Dialer, network, addr string) (net.Conn, error) {
 	done := make(chan struct{})
 	defer close(done)
 

@@ -8,17 +8,16 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/net/proxy"
 	"golang.org/x/time/rate"
 )
 
 const rateLimitBurst = 32 << 10
 
 func init() {
-	proxy.RegisterDialerType("ratelimit", rateLimitFromURL)
+	proxy_RegisterDialerType("ratelimit", rateLimitFromURL)
 }
 
-func rateLimitFromURL(u *url.URL, forward proxy.Dialer) (proxy.Dialer, error) {
+func rateLimitFromURL(u *url.URL, forward proxy_Dialer) (proxy_Dialer, error) {
 	values := u.Query()
 	r := rateLimitParseRate(values, "r", "read", "rw", "readwrite")
 	w := rateLimitParseRate(values, "w", "write", "rw", "readwrite")
@@ -60,7 +59,7 @@ func rateLimitParseRate(values url.Values, keys ...string) int {
 type rateLimitDialer struct {
 	ReadRate  int
 	WriteRate int
-	Forward   proxy.Dialer
+	Forward   proxy_Dialer
 }
 
 func (d *rateLimitDialer) Dial(network, addr string) (net.Conn, error) {
