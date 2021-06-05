@@ -5,10 +5,17 @@ import (
 	"net"
 )
 
+// A ContextDialer dials using a context.
 type ContextDialer interface {
 	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
 }
 
+// Dial works like DialContext on Dialer with a fallback in case provided Dialer is not a ContextDialer.
+//
+// The passed ctx is only used for returning the Conn, not the lifetime of the Conn.
+//
+// Custom dialers (registered via RegisterDialerType) that do not implement ContextDialer
+// can leak a goroutine for as long as it takes the underlying Dialer implementation to timeout.
 func Dial(ctx context.Context, d Dialer, network, addr string) (net.Conn, error) {
 	if xd, ok := d.(ContextDialer); ok {
 		return xd.DialContext(ctx, network, addr)
