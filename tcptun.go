@@ -13,15 +13,18 @@ func init() {
 }
 
 func tcptunFromURL(u *url.URL, forward proxy_Dialer) (proxy_Dialer, error) {
-	if u.Port() == "" {
-		return nil, fmt.Errorf("proxy/tcptun: missing port in url %v", u)
+	var hasPort bool
+
+	if u.Port() != "" {
+		hasPort = true
 	}
 
-	return &tcptunDialer{u.Host, forward}, nil
+	return &tcptunDialer{u.Host, hasPort, forward}, nil
 }
 
 type tcptunDialer struct {
 	Server  string
+	HasPort bool
 	Forward proxy_Dialer
 }
 
@@ -36,7 +39,14 @@ func (d *tcptunDialer) DialContext(ctx context.Context, network, addr string) (n
 		return nil, fmt.Errorf("proxy/tcptun: network not implemented: %v", network)
 	}
 
-	c, err := Dial(ctx, d.Forward, network, d.Server)
+	target := d.Server
+
+	if !d.HasPort {
+		_, port, _ := net.SplitHostPort(addr)
+		target = net.JoinHostPort(target, port)
+	}
+
+	c, err := Dial(ctx, d.Forward, network, target)
 	if err != nil {
 		err = fmt.Errorf("proxy/tcptun: dial %v: %w", d.Server, err)
 	}
