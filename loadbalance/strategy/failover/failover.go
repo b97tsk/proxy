@@ -158,7 +158,11 @@ type dialerItem struct {
 }
 
 func (t *dialerItem) Less(other *dialerItem) bool {
-	return t.Score > other.Score || t.SeqIndex < other.SeqIndex
+	if d := t.Score - other.Score; d != 0 {
+		return d > 0
+	}
+
+	return t.SeqIndex < other.SeqIndex
 }
 
 func (t *dialerItem) Success() {
@@ -170,7 +174,9 @@ func (t *dialerItem) Success() {
 		t.N = 0
 	}
 
-	t.N++
+	if t.N < maxN {
+		t.N++
+	}
 
 	t.Score += fibonacci(t.N)
 	if t.Score > maxScore {
@@ -187,7 +193,9 @@ func (t *dialerItem) Failure() {
 		t.N = 0
 	}
 
-	t.N--
+	if t.N > -maxN {
+		t.N--
+	}
 
 	t.Score -= fibonacci(-t.N)
 	if t.Score < 0 {
@@ -203,4 +211,7 @@ func fibonacci(n int) int {
 	}
 }
 
-const maxScore = 100
+const (
+	maxScore = 100
+	maxN     = 10 // fibonacci(10) = 55
+)
