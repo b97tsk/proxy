@@ -52,21 +52,28 @@ func (d *dialer) DialContext(ctx context.Context, network, addr string) (net.Con
 	d.mu.Unlock()
 
 	c, err := proxy.Dial(ctx, t.Dialer, network, addr)
+	if err != nil {
+		d.fix(t, false)
+		return nil, err
+	}
 
-	d.mu.Lock()
-	d.fix(t, err == nil)
-	d.mu.Unlock()
-
-	return c, err
+	return newConn(c, d, t), nil
 }
 
 func (d *dialer) fix(t *dialerItem, success bool) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	oldScore := t.Score
 
 	if success {
 		t.Success()
 	} else {
 		t.Failure()
+	}
+
+	if t.Score == oldScore {
+		return
 	}
 
 	d.scoreChanged(oldScore, t.Score)
@@ -119,6 +126,48 @@ func (d *dialer) scoreChanged(oldScore, newScore int) {
 			d.numHigh++
 		}
 	}
+}
+
+type conn struct {
+	net.Conn
+
+	d *dialer
+	t *dialerItem
+
+	closed     bool
+	success    bool
+	readfailed bool
+}
+
+func newConn(c net.Conn, d *dialer, t *dialerItem) *conn {
+	return &conn{Conn: c, d: d, t: t}
+}
+
+func (c *conn) Read(b []byte) (n int, err error) {
+	n, err = c.Conn.Read(b)
+
+	if n > 0 && !c.success {
+		c.success = true
+		c.d.fix(c.t, true)
+	}
+
+	if err != nil {
+		c.readfailed = true
+	}
+
+	return
+}
+
+func (c *conn) Close() error {
+	if !c.closed {
+		c.closed = true
+
+		if !c.success && c.readfailed {
+			c.d.fix(c.t, false)
+		}
+	}
+
+	return c.Conn.Close()
 }
 
 type dialerHeap []*dialerItem
@@ -212,6 +261,6 @@ func fibonacci(n int) int {
 }
 
 const (
-	maxScore = 100
-	maxN     = 10 // fibonacci(10) = 55
+	maxScore = 64
+	maxN     = 9 // fibonacci(9) = 34
 )
