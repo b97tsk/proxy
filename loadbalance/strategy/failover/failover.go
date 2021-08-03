@@ -21,10 +21,10 @@ func newDialer(dialers []proxy.Dialer) proxy.Dialer {
 		panic("proxy/loadbalance/failover: no dialers")
 	}
 
-	heap := make(dialerHeap, len(dialers))
+	heapDialers := make(dialerHeap, len(dialers))
 
-	for i := range heap {
-		heap[i] = &dialerItem{
+	for i := range heapDialers {
+		heapDialers[i] = &dialerItem{
 			Dialer:    dialers[i],
 			HeapIndex: i,
 			SeqIndex:  i,
@@ -32,7 +32,9 @@ func newDialer(dialers []proxy.Dialer) proxy.Dialer {
 		}
 	}
 
-	return &dialer{dialers: heap}
+	heap.Init(&heapDialers)
+
+	return &dialer{dialers: heapDialers}
 }
 
 type dialer struct {
@@ -81,7 +83,7 @@ func (d *dialer) fix(t *dialerItem, success bool) {
 	heap.Fix(&d.dialers, t.HeapIndex)
 
 	n := len(d.dialers)
-	if d.numLow < n || d.numHigh < n {
+	if d.numLow < n && d.numHigh < n {
 		return
 	}
 
